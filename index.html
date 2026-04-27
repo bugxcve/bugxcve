@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Varun Saxena — Application Security</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c10;
+    --bg2: #0d1117;
+    --bg3: #111820;
+    --border: #1e2d3d;
+    --accent: #00e5ff;
+    --accent2: #39ff14;
+    --accent3: #ff4c60;
+    --text: #cdd9e5;
+    --text-dim: #6a7d8e;
+    --text-bright: #e8f0f8;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Syne', sans-serif;
+    --body: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINE overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,229,255,0.015) 2px,
+      rgba(0,229,255,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* NOISE texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.4;
+  }
+
+  /* ═══════════════════ NAV ═══════════════════ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 48px;
+    background: rgba(8,12,16,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  .nav-logo span { color: var(--text-dim); }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+
+  /* ═══════════════════ HERO ═══════════════════ */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 48px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    top: 20%;
+    right: 5%;
+    width: 520px;
+    height: 520px;
+    background: radial-gradient(circle, rgba(0,229,255,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .hero-glow2 {
+    position: absolute;
+    bottom: 10%;
+    left: -5%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(57,255,20,0.05) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+  }
+
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1.hero-name {
+    font-family: var(--display);
+    font-size: clamp(52px, 7vw, 96px);
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text-bright);
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards 0.35s;
+  }
+
+  h1.hero-name .accent-word {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--accent);
+  }
+
+  .hero-title {
+    font-family: var(--mono);
+    font-size: clamp(14px, 2vw, 18px);
+    color: var(--accent2);
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards 0.5s;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 580px;
+    margin-bottom: 44px;
+    line-height: 1.8;
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards 0.65s;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.7s ease forwards 0.8s;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-primary:hover {
+    background: #33eeff;
+    transform: translateY(-2px);
+    box-shadow: 0 0 24px rgba(0,229,255,0.4);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.06);
+  }
+
+  /* ═══════════════════ STATS BAR ═══════════════════ */
+  .stats-bar {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 28px 48px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+
+  .stat {
+    padding: 0 32px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .stat:first-child { border-left: 1px solid var(--border); }
+
+  .stat-number {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  /* ═══════════════════ SECTIONS ═══════════════════ */
+  section {
+    padding: 88px 48px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    max-width: 80px;
+  }
+
+  h2.section-title {
+    font-family: var(--display);
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 52px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  /* ═══════════════════ EXPERIENCE ═══════════════════ */
+  .experience-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .experience-list::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--accent), var(--border), transparent);
+  }
+
+  .exp-item {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0 24px;
+    padding-bottom: 48px;
+    position: relative;
+  }
+
+  .exp-dot {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+    border-radius: 0;
+    transform: rotate(45deg);
+    position: relative;
+    z-index: 1;
+    margin-top: 4px;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .exp-item:hover .exp-dot {
+    background: var(--accent);
+  }
+
+  .exp-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 28px 32px;
+    position: relative;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .exp-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .exp-item:hover .exp-card {
+    border-color: rgba(0,229,255,0.3);
+    transform: translateX(4px);
+  }
+
+  .exp-item:hover .exp-card::before { opacity: 1; }
+
+  .exp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .exp-role {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+
+  .exp-period {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    background: rgba(57,255,20,0.08);
+    border: 1px solid rgba(57,255,20,0.2);
+    padding: 4px 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .exp-company {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .exp-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .exp-bullets li {
+    font-size: 14px;
+    color: var(--text-dim);
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .exp-bullets li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: bold;
+  }
+
+  /* ═══════════════════ SKILLS ═══════════════════ */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  .skill-category {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .skill-category::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 60px; height: 60px;
+    background: radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%);
+  }
+
+  .skill-category:hover {
+    border-color: rgba(0,229,255,0.3);
+  }
+
+  .skill-cat-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .skill-cat-title::before {
+    content: '//';
+    color: var(--text-dim);
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .skill-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+  }
+
+  .skill-tag:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.06);
+  }
+
+  /* ═══════════════════ PROJECTS ═══════════════════ */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  .project-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+
+  .project-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0,229,255,0.3);
+  }
+
+  .project-card::before {
+    content: attr(data-index);
+    position: absolute;
+    top: 16px;
+    right: 24px;
+    font-family: var(--display);
+    font-size: 64px;
+    font-weight: 800;
+    color: rgba(0,229,255,0.04);
+    line-height: 1;
+  }
+
+  .project-icon {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 18px;
+    background: rgba(0,229,255,0.06);
+  }
+
+  .project-title {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 12px;
+  }
+
+  .project-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .project-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .project-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    background: rgba(57,255,20,0.06);
+    border: 1px solid rgba(57,255,20,0.15);
+    padding: 3px 8px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ═══════════════════ BUG BOUNTY ═══════════════════ */
+  .bounty-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+
+  .bounty-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent3), var(--accent), var(--accent2));
+  }
+
+  .bounty-stat {
+    text-align: center;
+    padding: 24px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+
+  .bounty-stat-num {
+    font-family: var(--display);
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .bounty-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .bounty-num-1 { color: var(--accent3); }
+  .bounty-num-2 { color: var(--accent); }
+
+  .bounty-title {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  .bounty-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.8;
+    margin-bottom: 24px;
+  }
+
+  .bounty-link {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(0,229,255,0.2);
+    padding-bottom: 2px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .bounty-link:hover {
+    border-color: var(--accent);
+    color: #33eeff;
+  }
+
+  /* ═══════════════════ EDUCATION & CERT ═══════════════════ */
+  .edu-cert-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .info-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .info-card:hover { border-color: rgba(0,229,255,0.25); }
+
+  .info-card-type {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .info-card-title {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .info-card-sub {
+    font-size: 14px;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-family: var(--mono);
+  }
+
+  .info-card-meta {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .cert-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--accent2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transform: rotate(45deg);
+    background: rgba(57,255,20,0.06);
+  }
+
+  .cert-badge span { transform: rotate(-45deg); display: block; }
+
+  /* ═══════════════════ CONTACT ═══════════════════ */
+  .contact-section {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 80px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .contact-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba(0,229,255,0.05) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .contact-title {
+    font-family: var(--display);
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    color: var(--text-bright);
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+    position: relative;
+  }
+
+  .contact-sub {
+    font-size: 15px;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+    position: relative;
+  }
+
+  .contact-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .contact-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    text-decoration: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    letter-spacing: 0.08em;
+    transition: all 0.25s;
+  }
+
+  .contact-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.04);
+    transform: translateY(-2px);
+  }
+
+  /* ═══════════════════ FOOTER ═══════════════════ */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg);
+  }
+
+  .footer-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .footer-text span { color: var(--accent); }
+
+  /* ═══════════════════ ANIMATIONS ═══════════════════ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ═══════════════════ RESPONSIVE ═══════════════════ */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .hero, section { padding: 80px 20px 60px; }
+    .stats-bar { grid-template-columns: 1fr 1fr; padding: 20px; }
+    .bounty-card, .edu-cert-grid { grid-template-columns: 1fr; }
+    .contact-section { padding: 60px 20px; }
+    footer { flex-direction: column; gap: 8px; text-align: center; padding: 16px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">VS<span>::</span>AppSec</div>
+  <ul class="nav-links">
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#bounty">Bug Bounty</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-content">
+    <div class="hero-tag">Available for opportunities</div>
+    <h1 class="hero-name">Varun<br><span class="accent-word">Saxena</span></h1>
+    <div class="hero-title">IT Technical Lead — Application Security<span class="cursor"></span></div>
+    <p class="hero-desc">
+      Results-driven security professional with 5+ years of experience in application security, Android malware analysis, and vulnerability assessment. Skilled in Frida, Ghidra, Burp Suite, and Nessus — building secure systems that last.
+    </p>
+    <div class="hero-cta">
+      <a href="#contact" class="btn btn-primary">Get in Touch</a>
+      <a href="#experience" class="btn btn-outline">View Experience</a>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar reveal">
+  <div class="stat">
+    <div class="stat-number">5+</div>
+    <div class="stat-label">Years Experience</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">22+</div>
+    <div class="stat-label">Bugs Reported</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">30%</div>
+    <div class="stat-label">Vuln Reduction</div>
+  </div>
+  <div class="stat">
+    <div class="stat-number">9</div>
+    <div class="stat-label">Critical Patches</div>
+  </div>
+</div>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="section-label">Work History</div>
+  <h2 class="section-title">Experience</h2>
+  <div class="experience-list">
+
+    <div class="exp-item reveal">
+      <div class="exp-dot"></div>
+      <div class="exp-card">
+        <div class="exp-header">
+          <div class="exp-role">IT Technical Lead</div>
+          <div class="exp-period">Oct 2025 – Dec 2025</div>
+        </div>
+        <div class="exp-company">Epstom Spec Chem Private Limited · Application Security</div>
+        <ul class="exp-bullets">
+          <li>Delivered comprehensive IT infrastructure management across the organization.</li>
+          <li>Led and mentored a technical security team, ensuring quality of deliverables.</li>
+          <li>Conducted and oversaw training on critical malware topics including spyware and backdoors.</li>
+          <li>Managed VAPT activities, reviewed findings, and supported remediation efforts.</li>
+          <li>Coordinated with clients to understand requirements and ensure effective communication.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="exp-item reveal">
+      <div class="exp-dot"></div>
+      <div class="exp-card">
+        <div class="exp-header">
+          <div class="exp-role">Application Security Engineer</div>
+          <div class="exp-period">Jun 2021 – Aug 2025</div>
+        </div>
+        <div class="exp-company">Cognizant Technology Solutions · 4 Years 2 Months</div>
+        <ul class="exp-bullets">
+          <li>Conducted extensive malware analysis and reverse engineering of mobile applications, identifying malicious code and vulnerabilities.</li>
+          <li>Specialized in detecting and mitigating Android malware including spyware and phishing attacks.</li>
+          <li>Used Frida, Ghidra, and Burp Suite for vulnerability assessments and security testing.</li>
+          <li>Led a team of engineers, providing training on security tools and maintaining client communication.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="exp-item reveal">
+      <div class="exp-dot"></div>
+      <div class="exp-card">
+        <div class="exp-header">
+          <div class="exp-role">Software Developer — Android</div>
+          <div class="exp-period">Apr 2020 – Apr 2021</div>
+        </div>
+        <div class="exp-company">NineHertz India Private Limited · 1 Year</div>
+        <ul class="exp-bullets">
+          <li>Conducted comprehensive vulnerability assessments on applications to identify and address security flaws.</li>
+          <li>Developed multiple Android applications implementing best practices for secure coding.</li>
+          <li>Enhanced application performance and security by resolving critical issues in legacy code.</li>
+          <li>Collaborated with cross-functional teams to ensure alignment on project goals and deliverables.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="exp-item reveal">
+      <div class="exp-dot"></div>
+      <div class="exp-card">
+        <div class="exp-header">
+          <div class="exp-role">Android Developer Intern</div>
+          <div class="exp-period">5 Months</div>
+        </div>
+        <div class="exp-company">WeaveBytes Infotech Pvt. Ltd.</div>
+        <ul class="exp-bullets">
+          <li>Designed and developed native Android applications focused on performance and usability.</li>
+          <li>Conducted comprehensive testing to ensure application stability and bug-free user experience.</li>
+          <li>Achieved over 5,000 downloads through innovative, user-centric feature implementations.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills" style="background: var(--bg2); max-width: 100%; padding: 88px 48px;">
+<div style="max-width: 1200px; margin: 0 auto;">
+  <div class="section-label">Technical Expertise</div>
+  <h2 class="section-title">Skills</h2>
+  <div class="skills-grid">
+    <div class="skill-category reveal">
+      <div class="skill-cat-title">Offensive Security</div>
+      <div class="skill-tags">
+        <div class="skill-tag">Penetration Testing</div>
+        <div class="skill-tag">VAPT</div>
+        <div class="skill-tag">Burp Suite</div>
+        <div class="skill-tag">Nessus</div>
+        <div class="skill-tag">Metasploit</div>
+      </div>
+    </div>
+    <div class="skill-category reveal">
+      <div class="skill-cat-title">Mobile Security</div>
+      <div class="skill-tags">
+        <div class="skill-tag">Android Security</div>
+        <div class="skill-tag">Malware Analysis</div>
+        <div class="skill-tag">Frida</div>
+        <div class="skill-tag">JADX</div>
+        <div class="skill-tag">Apktool</div>
+        <div class="skill-tag">HTTPToolkit</div>
+      </div>
+    </div>
+    <div class="skill-category reveal">
+      <div class="skill-cat-title">Reverse Engineering</div>
+      <div class="skill-tags">
+        <div class="skill-tag">Ghidra</div>
+        <div class="skill-tag">Static Analysis</div>
+        <div class="skill-tag">Dynamic Analysis</div>
+        <div class="skill-tag">SAST</div>
+        <div class="skill-tag">DAST</div>
+      </div>
+    </div>
+    <div class="skill-category reveal">
+      <div class="skill-cat-title">Web Security</div>
+      <div class="skill-tags">
+        <div class="skill-tag">Web App Testing</div>
+        <div class="skill-tag">OWASP Top 10</div>
+        <div class="skill-tag">XSS / CSRF</div>
+        <div class="skill-tag">Web Architecture</div>
+      </div>
+    </div>
+    <div class="skill-category reveal">
+      <div class="skill-cat-title">Infrastructure</div>
+      <div class="skill-tags">
+        <div class="skill-tag">IDS / Suricata</div>
+        <div class="skill-tag">Threat Modeling</div>
+        <div class="skill-tag">Security Architecture</div>
+        <div class="skill-tag">Incident Response</div>
+      </div>
+    </div>
+    <div class="skill-category reveal">
+      <div class="skill-cat-title">Process & Standards</div>
+      <div class="skill-tags">
+        <div class="skill-tag">Secure SDLC</div>
+        <div class="skill-tag">Security Policies</div>
+        <div class="skill-tag">Client Communication</div>
+        <div class="skill-tag">Team Leadership</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-label">Selected Work</div>
+  <h2 class="section-title">Projects</h2>
+  <div class="projects-grid">
+
+    <div class="project-card reveal" data-index="01">
+      <div class="project-icon">📱</div>
+      <div class="project-title">Mobile Application Security Testing</div>
+      <p class="project-desc">Comprehensive mobile security assessment with reverse engineering of Android apps, identifying functional and security issues across the full application stack.</p>
+      <div class="project-tags">
+        <span class="project-tag">JADX</span>
+        <span class="project-tag">Ghidra</span>
+        <span class="project-tag">HTTPToolkit</span>
+        <span class="project-tag">Apktool</span>
+      </div>
+    </div>
+
+    <div class="project-card reveal" data-index="02">
+      <div class="project-icon">🛡️</div>
+      <div class="project-title">Enterprise Security Architecture</div>
+      <p class="project-desc">Designed and implemented enterprise-grade security architecture, reducing security incidents by 25% and vulnerabilities by 30% through systematic assessments and policy enforcement.</p>
+      <div class="project-tags">
+        <span class="project-tag">Nessus</span>
+        <span class="project-tag">Metasploit</span>
+        <span class="project-tag">Suricata IDS</span>
+        <span class="project-tag">Pen Testing</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- BUG BOUNTY -->
+<section id="bounty" style="max-width: 100%; background: var(--bg2); padding: 88px 48px;">
+<div style="max-width: 1200px; margin: 0 auto;">
+  <div class="section-label">Open Bug Bounty</div>
+  <h2 class="section-title">Bug Bounty</h2>
+  <div class="bounty-card reveal">
+    <div>
+      <div class="bounty-title">Finding & Patching Real-World Vulnerabilities</div>
+      <p class="bounty-desc">Active contributor on the Open Bug Bounty platform, reporting critical security vulnerabilities including Reflected XSS and CSRF flaws across production applications. Responsible disclosure with verified patches.</p>
+      <a href="https://www.openbugbounty.org/" target="_blank" class="bounty-link">View Profile: BugXCVE →</a>
+    </div>
+    <div>
+      <div class="bounty-stats-grid">
+        <div class="bounty-stat">
+          <div class="bounty-stat-num bounty-num-1">22+</div>
+          <div style="font-family: var(--mono); font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Vulnerabilities Reported</div>
+        </div>
+        <div class="bounty-stat">
+          <div class="bounty-stat-num bounty-num-2">9</div>
+          <div style="font-family: var(--mono); font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Critical Patches Achieved</div>
+        </div>
+        <div class="bounty-stat" style="grid-column: span 2;">
+          <div style="font-family: var(--mono); font-size: 11px; color: var(--accent3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Vulnerability Types</div>
+          <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <span style="font-family: var(--mono); font-size: 10px; color: var(--text); background: rgba(255,76,96,0.08); border: 1px solid rgba(255,76,96,0.2); padding: 4px 10px;">Reflected XSS</span>
+            <span style="font-family: var(--mono); font-size: 10px; color: var(--text); background: rgba(255,76,96,0.08); border: 1px solid rgba(255,76,96,0.2); padding: 4px 10px;">CSRF</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- EDUCATION & CERT -->
+<section id="education">
+  <div class="section-label">Background</div>
+  <h2 class="section-title">Education & Certification</h2>
+  <div class="edu-cert-grid reveal">
+    <div class="info-card">
+      <div class="info-card-type">🎓 Education</div>
+      <div class="info-card-title">B.Tech / B.E. in Computer Science & Engineering</div>
+      <div class="info-card-sub">Manipal Academy of Higher Education (MAHE)</div>
+      <div class="info-card-meta">Graduated 2017</div>
+    </div>
+    <div class="info-card">
+      <div class="cert-badge"><span>✓</span></div>
+      <div class="info-card-type">🏅 Certification</div>
+      <div class="info-card-title">Certified Ethical Hacker (CEH)</div>
+      <div class="info-card-sub">EC-Council</div>
+      <div class="info-card-meta">Industry-recognized credential in ethical hacking and penetration testing methodologies.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<div class="contact-section" id="contact">
+  <div class="contact-glow"></div>
+  <div class="contact-title">Let's Work Together</div>
+  <p class="contact-sub">Open to security roles, consulting, and collaboration opportunities.</p>
+  <div class="contact-links">
+    <a href="mailto:vrnsxn786@gmail.com" class="contact-link">
+      <span>✉</span> vrnsxn786@gmail.com
+    </a>
+    <a href="tel:+918290018370" class="contact-link">
+      <span>☎</span> +91-8290018370
+    </a>
+    <a href="https://www.linkedin.com/in/varunkumarsaxena/" target="_blank" class="contact-link">
+      <span>in</span> LinkedIn Profile
+    </a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-text">© 2026 <span>Varun Saxena</span> — All rights reserved</div>
+  <div class="footer-text">Gurugram, <span>INDIA</span></div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Smooth nav highlight
+  const sections = document.querySelectorAll('section[id], div[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.style.color = a.getAttribute('href') === `#${current}` ? 'var(--accent)' : '';
+    });
+  });
+</script>
+</body>
+</html>
