@@ -35,6 +35,111 @@
     overflow-x: hidden;
   }
 
+  /* ═══════════════════════════════════════════════════════════════
+     TERMINAL INTRO SCREEN
+  ═══════════════════════════════════════════════════════════════ */
+  .terminal-intro {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+
+  .terminal-intro.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .terminal-box {
+    border: 3px solid var(--accent);
+    padding: 40px;
+    background: rgba(0, 255, 136, 0.02);
+    max-width: 700px;
+    width: 100%;
+    box-shadow: 0 0 40px rgba(0, 255, 136, 0.3), inset 0 0 40px rgba(0, 255, 136, 0.05);
+    position: relative;
+  }
+
+  .terminal-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 30px;
+    animation: titleGlow 2s ease-in-out infinite;
+    letter-spacing: 3px;
+  }
+
+  @keyframes titleGlow {
+    0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 136, 0.5); }
+    50% { text-shadow: 0 0 40px rgba(0, 255, 136, 0.8), 0 0 60px rgba(0, 255, 136, 0.4); }
+  }
+
+  .terminal-line {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    margin: 12px 0;
+    min-height: 24px;
+    line-height: 1.8;
+  }
+
+  .terminal-line.typing {
+    display: inline-block;
+  }
+
+  .terminal-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1.2em;
+    background: var(--accent);
+    margin-left: 3px;
+    vertical-align: middle;
+    animation: blink-cursor 0.7s infinite;
+  }
+
+  @keyframes blink-cursor {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  .terminal-prompt {
+    color: #ff006e;
+    font-weight: bold;
+  }
+
+  .terminal-status {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin: 0 5px;
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
   /* SCANLINE overlay */
   body::before {
     content: '';
@@ -1256,6 +1361,28 @@
 </head>
 <body>
 
+  <!-- ═══════════════════════════════════════════════════════════════
+       TERMINAL INTRO SPLASH SCREEN
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="terminal-intro" id="terminalIntro">
+    <div class="terminal-box">
+      <div class="terminal-title">⚡ SECURE ACCESS ⚡</div>
+      <div id="line1" class="terminal-line"></div>
+      <div id="line2" class="terminal-line"></div>
+      <div id="line3" class="terminal-line"></div>
+      <div id="line4" class="terminal-line"></div>
+      <div class="terminal-status">
+        <span class="status-dot"></span>
+        Loading portfolio
+        <span class="status-dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MAIN WEBSITE
+  ═══════════════════════════════════════════════════════════════ -->
+
 <!-- NAV -->
 <nav>
   <div class="nav-logo">VS<span>::</span>AppSec</div>
@@ -1565,6 +1692,75 @@
 </footer>
 
 <script>
+  // ═══════════════════════════════════════════════════════════════
+  // TERMINAL INTRO ANIMATION
+  // ═══════════════════════════════════════════════════════════════
+  
+  function typeText(element, text, speed = 50) {
+    return new Promise(resolve => {
+      let index = 0;
+      element.textContent = '';
+      const interval = setInterval(() => {
+        if (index < text.length) {
+          element.textContent += text[index];
+          index++;
+        } else {
+          clearInterval(interval);
+          // Add cursor
+          const cursor = document.createElement('span');
+          cursor.className = 'terminal-cursor';
+          element.appendChild(cursor);
+          resolve();
+        }
+      }, speed);
+    });
+  }
+
+  async function initializeTerminalIntro() {
+    const line1 = document.getElementById('line1');
+    const line2 = document.getElementById('line2');
+    const line3 = document.getElementById('line3');
+    const line4 = document.getElementById('line4');
+    const terminalIntro = document.getElementById('terminalIntro');
+
+    // Add prompts
+    const prompt = '<span class="terminal-prompt">> </span>';
+    
+    // Typing animation sequence
+    line1.innerHTML = prompt;
+    await typeText(line1, 'Accessing system...', 60);
+    await new Promise(r => setTimeout(r, 600));
+    
+    line2.innerHTML = prompt;
+    await typeText(line2, 'Initializing secure shell...', 60);
+    await new Promise(r => setTimeout(r, 600));
+    
+    line3.innerHTML = prompt;
+    await typeText(line3, 'Welcome, Analyst', 60);
+    await new Promise(r => setTimeout(r, 500));
+    
+    line4.innerHTML = '<span class="terminal-prompt">></span> ';
+    await typeText(line4, 'Loading portfolio...', 50);
+    await new Promise(r => setTimeout(r, 800));
+    
+    // Fade out and hide intro
+    terminalIntro.classList.add('hidden');
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
+  }
+
+  // Start intro animation when DOM is loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTerminalIntro);
+  } else {
+    initializeTerminalIntro();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ORIGINAL PORTFOLIO SCRIPTS
+  // ═══════════════════════════════════════════════════════════════
+  
   // Scroll reveal
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((e, i) => {
